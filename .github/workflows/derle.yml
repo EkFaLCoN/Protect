@@ -1,0 +1,32 @@
+name: Derle
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Zip varsa ac, pom.xml bul, derle
+        run: |
+          set -e
+          mkdir -p /tmp/work /tmp/cikti
+          if ls ./*.zip >/dev/null 2>&1; then
+            for z in ./*.zip; do unzip -oq "$z" -d "/tmp/work/$(basename "$z" .zip)"; done
+          else
+            cp -r . /tmp/work/proje
+          fi
+          for pom in $(find /tmp/work -name pom.xml -not -path "*/target/*"); do
+            mvn -B -q -f "$pom" package
+            cp "$(dirname "$pom")"/target/*.jar /tmp/cikti/
+          done
+          rm -f /tmp/cikti/original-*.jar
+          ls -l /tmp/cikti
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jarlar
+          path: /tmp/cikti/*.jar
